@@ -6,6 +6,7 @@ Plugin WordPress che permette di creare link diretti a WhatsApp seguendo le indi
 
 - Configura il numero di telefono internazionale destinatario dei messaggi.
 - Aggiungi un breve testo introduttivo che verrà inserito prima del titolo del post nel messaggio precompilato.
+- Imposta il testo che sarà mostrato insieme al link generato dallo shortcode.
 - Inserisci lo shortcode `[send_whatsapp_link]` ovunque nei contenuti per mostrare il link.
 - Il link generato apre una chat WhatsApp con il numero configurato e precompila il messaggio con "Testo breve + Titolo del post".
 
@@ -16,6 +17,7 @@ Plugin WordPress che permette di creare link diretti a WhatsApp seguendo le indi
 3. Accedi alla voce **Send WhatsApp → Configurazione** nel menu di amministrazione e inserisci:
    - Il numero di telefono completo di prefisso internazionale (solo cifre, senza simboli o spazi).
    - Un breve testo opzionale da aggiungere prima del titolo del post nel messaggio.
+   - Un testo opzionale da visualizzare accanto al link generato.
 4. Salva le impostazioni.
 5. Aggiungi lo shortcode `[send_whatsapp_link]` dove desideri che appaia il link all'interno dei tuoi contenuti.
 
