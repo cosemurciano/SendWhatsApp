@@ -18,11 +18,16 @@ define( 'SEND_WHATSAPP_OPTION_PREFIX', 'send_whatsapp_text_prefix' );
 define( 'SEND_WHATSAPP_SHORTCODE', 'send_whatsapp_link' );
 define( 'SEND_WHATSAPP_OPTION_LINK_TEXT', 'send_whatsapp_link_text' );
 define( 'SEND_WHATSAPP_OPTION_DISPLAY_MODE', 'send_whatsapp_display_mode' );
+define( 'SEND_WHATSAPP_OPTION_ALIGNMENT', 'send_whatsapp_alignment' );
 
 define( 'SEND_WHATSAPP_DISPLAY_TEXT', 'text' );
 define( 'SEND_WHATSAPP_DISPLAY_BUTTON_SMALL', 'button_small' );
 define( 'SEND_WHATSAPP_DISPLAY_BUTTON_MEDIUM', 'button_medium' );
 define( 'SEND_WHATSAPP_DISPLAY_BUTTON_LARGE', 'button_large' );
+
+define( 'SEND_WHATSAPP_ALIGN_LEFT', 'left' );
+define( 'SEND_WHATSAPP_ALIGN_CENTER', 'center' );
+define( 'SEND_WHATSAPP_ALIGN_RIGHT', 'right' );
 
 add_action( 'admin_menu', 'send_whatsapp_register_menu' );
 add_action( 'admin_init', 'send_whatsapp_register_settings' );
@@ -68,6 +73,12 @@ function send_whatsapp_register_settings() {
         'sanitize_callback' => 'send_whatsapp_sanitize_display_mode',
         'default'           => SEND_WHATSAPP_DISPLAY_TEXT,
     ] );
+
+    register_setting( 'send_whatsapp_settings_group', SEND_WHATSAPP_OPTION_ALIGNMENT, [
+        'type'              => 'string',
+        'sanitize_callback' => 'send_whatsapp_sanitize_alignment',
+        'default'           => SEND_WHATSAPP_ALIGN_LEFT,
+    ] );
 }
 
 /**
@@ -104,12 +115,15 @@ function send_whatsapp_render_settings_page() {
     $link_text    = get_option( SEND_WHATSAPP_OPTION_LINK_TEXT, '' );
     $display_mode = get_option( SEND_WHATSAPP_OPTION_DISPLAY_MODE, SEND_WHATSAPP_DISPLAY_TEXT );
     $display_mode = send_whatsapp_sanitize_display_mode( $display_mode );
+    $alignment    = get_option( SEND_WHATSAPP_OPTION_ALIGNMENT, SEND_WHATSAPP_ALIGN_LEFT );
+    $alignment    = send_whatsapp_sanitize_alignment( $alignment );
 
     $shortcode_attributes = [
         'phone'  => $phone,
         'prefix' => $prefix,
         'text'   => $link_text,
         'mode'   => $display_mode,
+        'align'  => $alignment,
     ];
 
     $shortcode_parts = [];
@@ -173,6 +187,18 @@ function send_whatsapp_render_settings_page() {
                         </select>
                     </td>
                 </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="send_whatsapp_alignment"><?php esc_html_e( 'Allineamento del pulsante o del link', 'send-whatsapp' ); ?></label>
+                    </th>
+                    <td>
+                        <select id="send_whatsapp_alignment" name="<?php echo esc_attr( SEND_WHATSAPP_OPTION_ALIGNMENT ); ?>">
+                            <option value="<?php echo esc_attr( SEND_WHATSAPP_ALIGN_LEFT ); ?>" <?php selected( $alignment, SEND_WHATSAPP_ALIGN_LEFT ); ?>><?php esc_html_e( 'Sinistra', 'send-whatsapp' ); ?></option>
+                            <option value="<?php echo esc_attr( SEND_WHATSAPP_ALIGN_CENTER ); ?>" <?php selected( $alignment, SEND_WHATSAPP_ALIGN_CENTER ); ?>><?php esc_html_e( 'Centro', 'send-whatsapp' ); ?></option>
+                            <option value="<?php echo esc_attr( SEND_WHATSAPP_ALIGN_RIGHT ); ?>" <?php selected( $alignment, SEND_WHATSAPP_ALIGN_RIGHT ); ?>><?php esc_html_e( 'Destra', 'send-whatsapp' ); ?></option>
+                        </select>
+                    </td>
+                </tr>
                 </tbody>
             </table>
             <?php submit_button(); ?>
@@ -185,6 +211,14 @@ function send_whatsapp_render_settings_page() {
                 <span class="screen-reader-text"><?php esc_html_e( 'Copia shortcode', 'send-whatsapp' ); ?></span>
             </button>
         </p>
+        <h3><?php esc_html_e( 'Opzioni shortcode disponibili', 'send-whatsapp' ); ?></h3>
+        <ul>
+            <li><code>phone="11234567890"</code> — <?php esc_html_e( 'Numero di telefono (sovrascrive quello configurato nelle impostazioni).', 'send-whatsapp' ); ?></li>
+            <li><code>prefix="Scrivi il tuo messaggio:"</code> — <?php esc_html_e( 'Testo che precede il titolo del contenuto nel messaggio inviato.', 'send-whatsapp' ); ?></li>
+            <li><code>text="Contattaci su WhatsApp"</code> — <?php esc_html_e( 'Testo del link o del pulsante.', 'send-whatsapp' ); ?></li>
+            <li><code>mode="text|button_small|button_medium|button_large"</code> — <?php esc_html_e( 'Modalità di visualizzazione.', 'send-whatsapp' ); ?></li>
+            <li><code>align="left|center|right"</code> — <?php esc_html_e( 'Allineamento del link o del pulsante.', 'send-whatsapp' ); ?></li>
+        </ul>
     </div>
     <script>
         (function() {
@@ -241,6 +275,27 @@ function send_whatsapp_sanitize_display_mode( $mode ) {
     }
 
     return $mode;
+}
+
+/**
+ * Sanitizes the selected alignment option.
+ *
+ * @param string $alignment Alignment input.
+ *
+ * @return string
+ */
+function send_whatsapp_sanitize_alignment( $alignment ) {
+    $allowed_alignment = [
+        SEND_WHATSAPP_ALIGN_LEFT,
+        SEND_WHATSAPP_ALIGN_CENTER,
+        SEND_WHATSAPP_ALIGN_RIGHT,
+    ];
+
+    if ( ! in_array( $alignment, $allowed_alignment, true ) ) {
+        return SEND_WHATSAPP_ALIGN_LEFT;
+    }
+
+    return $alignment;
 }
 
 /**
@@ -332,6 +387,7 @@ function send_whatsapp_shortcode_handler( $atts = [] ) {
             'prefix' => '',
             'text'   => '',
             'mode'   => '',
+            'align'  => '',
         ],
         $atts,
         SEND_WHATSAPP_SHORTCODE
@@ -357,11 +413,8 @@ function send_whatsapp_shortcode_handler( $atts = [] ) {
         $link_text = get_option( SEND_WHATSAPP_OPTION_LINK_TEXT, '' );
     }
 
-    if ( '' !== $atts['mode'] ) {
-        $display_mode = $atts['mode'];
-    } else {
-        $display_mode = get_option( SEND_WHATSAPP_OPTION_DISPLAY_MODE, SEND_WHATSAPP_DISPLAY_TEXT );
-    }
+    $display_mode = '' !== $atts['mode'] ? $atts['mode'] : get_option( SEND_WHATSAPP_OPTION_DISPLAY_MODE, SEND_WHATSAPP_DISPLAY_TEXT );
+    $alignment    = '' !== $atts['align'] ? $atts['align'] : get_option( SEND_WHATSAPP_OPTION_ALIGNMENT, SEND_WHATSAPP_ALIGN_LEFT );
 
     if ( '' === $link_text ) {
         $display_text = __( 'Apri chat WhatsApp', 'send-whatsapp' );
@@ -370,16 +423,25 @@ function send_whatsapp_shortcode_handler( $atts = [] ) {
     }
 
     $display_mode = send_whatsapp_sanitize_display_mode( $display_mode );
+    $alignment    = send_whatsapp_sanitize_alignment( $alignment );
+
+    send_whatsapp_enqueue_frontend_styles();
+
+    $alignment_class = sprintf( 'send-whatsapp-wrapper--align-%s', esc_attr( $alignment ) );
 
     if ( SEND_WHATSAPP_DISPLAY_TEXT === $display_mode ) {
-        return sprintf(
+        $link_markup = sprintf(
             '<a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
             esc_url( $url ),
             esc_html( $display_text )
         );
-    }
 
-    send_whatsapp_enqueue_frontend_styles();
+        return sprintf(
+            '<div class="send-whatsapp-wrapper %1$s">%2$s</div>',
+            $alignment_class,
+            $link_markup
+        );
+    }
 
     $size_class = '';
 
@@ -406,7 +468,11 @@ function send_whatsapp_shortcode_handler( $atts = [] ) {
         $label_markup
     );
 
-    return $button_markup;
+    return sprintf(
+        '<div class="send-whatsapp-wrapper %1$s">%2$s</div>',
+        $alignment_class,
+        $button_markup
+    );
 }
 add_shortcode( SEND_WHATSAPP_SHORTCODE, 'send_whatsapp_shortcode_handler' );
 
@@ -421,7 +487,19 @@ function send_whatsapp_enqueue_frontend_styles() {
     wp_register_style( 'send-whatsapp-frontend', false, [], '1.0.0' );
     wp_enqueue_style( 'send-whatsapp-frontend' );
 
-    $css = '.send-whatsapp-button{' .
+    $css = '.send-whatsapp-wrapper{' .
+        'text-align:left;' .
+        '}' .
+        '.send-whatsapp-wrapper--align-left{' .
+        'text-align:left;' .
+        '}' .
+        '.send-whatsapp-wrapper--align-center{' .
+        'text-align:center;' .
+        '}' .
+        '.send-whatsapp-wrapper--align-right{' .
+        'text-align:right;' .
+        '}' .
+        '.send-whatsapp-button{' .
         'display:inline-flex;' .
         'align-items:center;' .
         'gap:0.5em;' .
