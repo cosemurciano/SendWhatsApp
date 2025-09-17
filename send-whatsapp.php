@@ -510,6 +510,7 @@ function send_whatsapp_enqueue_frontend_styles() {
         'font-weight:600;' .
         'transition:background-color 0.2s ease-in-out;' .
         'box-shadow:0 2px 4px rgba(0,0,0,0.1);' .
+        'margin-bottom:15px;' .
         '}' .
         '.send-whatsapp-button:hover,' .
         '.send-whatsapp-button:focus{' .
