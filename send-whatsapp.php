@@ -103,6 +103,31 @@ function send_whatsapp_render_settings_page() {
     $prefix       = get_option( SEND_WHATSAPP_OPTION_PREFIX, '' );
     $link_text    = get_option( SEND_WHATSAPP_OPTION_LINK_TEXT, '' );
     $display_mode = get_option( SEND_WHATSAPP_OPTION_DISPLAY_MODE, SEND_WHATSAPP_DISPLAY_TEXT );
+    $display_mode = send_whatsapp_sanitize_display_mode( $display_mode );
+
+    $shortcode_attributes = [
+        'phone'  => $phone,
+        'prefix' => $prefix,
+        'text'   => $link_text,
+        'mode'   => $display_mode,
+    ];
+
+    $shortcode_parts = [];
+
+    foreach ( $shortcode_attributes as $attribute_key => $attribute_value ) {
+        $shortcode_parts[] = sprintf(
+            '%1$s="%2$s"',
+            esc_attr( $attribute_key ),
+            esc_attr( $attribute_value )
+        );
+    }
+
+    $shortcode_example = sprintf(
+        '[%1$s %2$s]',
+        SEND_WHATSAPP_SHORTCODE,
+        implode( ' ', $shortcode_parts )
+    );
+
     ?>
     <div class="wrap">
         <h1><?php esc_html_e( 'Configurazione', 'send-whatsapp' ); ?></h1>
@@ -154,8 +179,8 @@ function send_whatsapp_render_settings_page() {
         </form>
         <h2><?php esc_html_e( 'Shortcode disponibile', 'send-whatsapp' ); ?></h2>
         <p class="send-whatsapp-shortcode-wrapper">
-            <code>[<?php echo esc_html( SEND_WHATSAPP_SHORTCODE ); ?>]</code>
-            <button type="button" class="button send-whatsapp-copy-button" data-shortcode="[<?php echo esc_attr( SEND_WHATSAPP_SHORTCODE ); ?>]" aria-label="<?php esc_attr_e( 'Copia shortcode', 'send-whatsapp' ); ?>">
+            <code><?php echo esc_html( $shortcode_example ); ?></code>
+            <button type="button" class="button send-whatsapp-copy-button" data-shortcode="<?php echo esc_attr( $shortcode_example ); ?>" aria-label="<?php esc_attr_e( 'Copia shortcode', 'send-whatsapp' ); ?>">
                 <span class="dashicons dashicons-clipboard" aria-hidden="true"></span>
                 <span class="screen-reader-text"><?php esc_html_e( 'Copia shortcode', 'send-whatsapp' ); ?></span>
             </button>
@@ -225,8 +250,10 @@ function send_whatsapp_sanitize_display_mode( $mode ) {
  *
  * @return string
  */
-function send_whatsapp_generate_url( $post_id = null ) {
-    $phone = get_option( SEND_WHATSAPP_OPTION_PHONE, '' );
+function send_whatsapp_generate_url( $post_id = null, $phone = null, $prefix_text = null ) {
+    if ( null === $phone ) {
+        $phone = get_option( SEND_WHATSAPP_OPTION_PHONE, '' );
+    }
 
     if ( empty( $phone ) ) {
         return '';
@@ -242,7 +269,9 @@ function send_whatsapp_generate_url( $post_id = null ) {
         return '';
     }
 
-    $prefix_text = get_option( SEND_WHATSAPP_OPTION_PREFIX, '' );
+    if ( null === $prefix_text ) {
+        $prefix_text = get_option( SEND_WHATSAPP_OPTION_PREFIX, '' );
+    }
     $message     = trim( $prefix_text . ' ' . $title );
     $message     = wp_strip_all_tags( $message );
 
@@ -296,15 +325,43 @@ function send_whatsapp_get_content_title( $post_id = null ) {
     return get_bloginfo( 'name', 'display' );
 }
 
-function send_whatsapp_shortcode_handler() {
-    $url = send_whatsapp_generate_url();
+function send_whatsapp_shortcode_handler( $atts = [] ) {
+    $atts = shortcode_atts(
+        [
+            'phone'  => '',
+            'prefix' => '',
+            'text'   => '',
+            'mode'   => '',
+        ],
+        $atts,
+        SEND_WHATSAPP_SHORTCODE
+    );
+
+    $phone = '' !== $atts['phone'] ? preg_replace( '/\s+/', '', $atts['phone'] ) : null;
+
+    if ( null !== $phone && ! preg_match( '/^[0-9]+$/', $phone ) ) {
+        $phone = null;
+    }
+
+    $prefix_text = '' !== $atts['prefix'] ? $atts['prefix'] : null;
+
+    $url = send_whatsapp_generate_url( null, $phone, $prefix_text );
 
     if ( empty( $url ) ) {
         return '';
     }
 
-    $display_mode = get_option( SEND_WHATSAPP_OPTION_DISPLAY_MODE, SEND_WHATSAPP_DISPLAY_TEXT );
-    $link_text = get_option( SEND_WHATSAPP_OPTION_LINK_TEXT, '' );
+    if ( '' !== $atts['text'] ) {
+        $link_text = $atts['text'];
+    } else {
+        $link_text = get_option( SEND_WHATSAPP_OPTION_LINK_TEXT, '' );
+    }
+
+    if ( '' !== $atts['mode'] ) {
+        $display_mode = $atts['mode'];
+    } else {
+        $display_mode = get_option( SEND_WHATSAPP_OPTION_DISPLAY_MODE, SEND_WHATSAPP_DISPLAY_TEXT );
+    }
 
     if ( '' === $link_text ) {
         $display_text = __( 'Apri chat WhatsApp', 'send-whatsapp' );
