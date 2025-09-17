@@ -217,13 +217,12 @@ function send_whatsapp_shortcode_handler() {
         return '';
     }
 
-    $post_id     = get_the_ID();
-    $title       = send_whatsapp_get_content_title( $post_id );
-    $link_text   = get_option( SEND_WHATSAPP_OPTION_LINK_TEXT, '' );
-    $display_text = trim( $link_text . ' ' . $title );
+    $link_text = get_option( SEND_WHATSAPP_OPTION_LINK_TEXT, '' );
 
-    if ( '' === $display_text ) {
+    if ( '' === $link_text ) {
         $display_text = __( 'Apri chat WhatsApp', 'send-whatsapp' );
+    } else {
+        $display_text = $link_text;
     }
 
     return sprintf(
